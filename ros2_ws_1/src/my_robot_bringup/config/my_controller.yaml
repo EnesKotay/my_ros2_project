@@ -1,0 +1,61 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 30 # Kontrol döngüsü hızı (30 Hz)
+    use_sim_time: true # Simülasyon zamanını kullan
+
+    diff_cont:
+      type: diff_drive_controller/DiffDriveController # Diferansiyel sürüş kontrolcüsü
+
+    joint_broad:
+      type: joint_state_broadcaster/JointStateBroadcaster # Joint durum yayıncısı
+
+diff_cont:
+  ros__parameters:
+    publish_rate: 50.0 # Odometri yayın hızı (50 Hz)
+    
+    # Frame ID'leri - Nav2 ile uyumlu olması için base_footprint kullanıyoruz
+    odom_frame_id: odom        # Odometry frame ID (ZORUNLU - odom yayınlamak için)
+    base_frame_id: base_footprint  # Base frame ID (Nav2 base_footprint kullanır)
+    
+    # Tekerlek Tanımları (XACRO ile eşleşmeli!)
+    left_wheel_names: ['base_left_wheel_joint']
+    right_wheel_names: ['base_right_wheel_joint']
+    wheel_separation: 0.45 # Tekerlekler arası mesafe (metre) - URDF'deki base_width ile uyumlu
+    wheel_radius: 0.1       # Tekerlek yarıçapı (metre) - URDF'deki wheel_radius ile uyumlu
+    
+    use_stamped_vel: false # True yapılması durumunda twist_mux remappingi değişmeli
+    cmd_vel_timeout: 1.5   # Hız komutu zaman aşımı (saniye). Güvenilirlik için artırıldı.
+
+    # --- Hız ve İvme Limitleri (PROFESYONEL GELİŞTİRME) ---
+    # Bu değerler, robotun maksimum fiziksel yeteneğini temsil etmelidir.
+    
+    allow_integration_in_loop_override: true 
+
+    # Doğrusal (Linear) Hız Limitleri (X ekseni)
+    linear:
+      x:
+        has_velocity_limits: true
+        max_velocity: 1.0     # Maksimum Lineer Hız (m/s)
+        has_acceleration_limits: true
+        max_acceleration: 2.5 # Maksimum Lineer Hızlanma (m/s²)
+        has_deceleration_limits: true
+        max_deceleration: 2.5 # Maksimum Lineer Yavaşlama (m/s²)
+
+    # Açısal (Angular) Hız Limitleri (Z ekseni)
+    angular:
+      z:
+        has_velocity_limits: true
+        max_velocity: 3.14    # Maksimum Açısal Hız (rad/s, ~180 derece/s)
+        has_acceleration_limits: true
+        max_acceleration: 5.0 # Maksimum Açısal Hızlanma (rad/s²)
+        has_deceleration_limits: true
+        max_deceleration: 5.0 # Maksimum Açısal Yavaşlama (rad/s²)
+
+    # --- ENCODER ve KAZANÇ AYARLARI (Gerektiğinde eklenecek) ---
+    # Eğer donanım kullanıyorsanız ve pozisyon kontrolü yapıyorsanız eklenmelidir:
+    # enable_feedforward: false 
+    # open_loop: true
+    # position_pid:
+    #   p: 100.0
+    #   i: 0.01
+    #   d: 10.0

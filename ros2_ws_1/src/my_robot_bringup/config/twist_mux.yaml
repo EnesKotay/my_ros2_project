@@ -1,0 +1,23 @@
+twist_mux:
+  ros__parameters:
+    topics:
+      # 1. En Yüksek Öncelik: Joystick (Manuel Kontrol Navigasyonu Geçersiz Kılar)
+      joystick:
+        topic   : cmd_vel_joy
+        timeout : 1.0     # Güvenilir timeout için artırıldı
+        priority: 5      # Navigasyon'dan daha DÜŞÜK sayı = daha YÜKSEK öncelik
+      
+      # 2. İkinci Öncelik: Navigasyon Yığını (Otonom Komutlar)
+      navigation:
+        topic   : cmd_vel_nav # 'cmd_vel' yerine daha spesifik bir isim önerilir
+        timeout : 1.0     # Güvenilir timeout için artırıldı
+        priority: 50     # Otonom komutların önceliği
+        
+      # 3. Opsiyonel: Acil Durum veya Teleop
+      teleop:
+        topic   : cmd_vel_teleop
+        timeout : 1.0
+        priority: 10
+        
+      # 4. Çıkış Konusu (Varsayılan olarak /cmd_vel_out'tur, ancak remapping ile ayarlanır)
+      # Genellikle remapping ile /diff_cont/cmd_vel_unstamped olarak ayarlanır (Launch dosyanızda doğru yapmışsınız.)
