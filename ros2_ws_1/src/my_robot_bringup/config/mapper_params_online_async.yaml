@@ -15,14 +15,13 @@ slam_toolbox:
     base_frame: base_footprint
     scan_topic: /lidar/out
     use_map_saver: true
-    mode: localization
+    mode: mapping  # Otonom keşif için mapping moduna geçirildi (localization -> mapping)
 
-    # if you'd like to immediately start continuing a map at a given pose
-    # or at the dock, but they are mutually exclusive, if pose is given
-    # will use pose
-    map_file_name: /home/enes/Desktop/ros2_ws_1/ilk_map
+    # OTONOM KEŞİF İÇİN: Eski haritayı yükleme, sıfırdan başla
+    # Eğer eski haritadan devam etmek isterseniz, aşağıdaki satırları açın:
+    # map_file_name: /home/enes/Desktop/ros2_ws_1/ilk_map
+    # map_start_at_dock: true
     # map_start_pose: [0.0, 0.0, 0.0]
-    map_start_at_dock: true
 
     debug_logging: false
     throttle_scans: 1

@@ -32,6 +32,12 @@ install(DIRECTORY
   DESTINATION share/${PROJECT_NAME}/
 )
 
+# Install Python scripts (cmd_vel_relay artık gerekli değil - twist_mux doğrudan /cmd_vel dinliyor)
+# install(PROGRAMS
+#   scripts/cmd_vel_relay.py
+#   DESTINATION lib/${PROJECT_NAME}
+# )
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)

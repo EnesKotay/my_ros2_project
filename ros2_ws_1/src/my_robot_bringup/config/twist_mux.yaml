@@ -9,7 +9,7 @@ twist_mux:
       
       # 2. İkinci Öncelik: Navigasyon Yığını (Otonom Komutlar)
       navigation:
-        topic   : cmd_vel_nav # 'cmd_vel' yerine daha spesifik bir isim önerilir
+        topic   : cmd_vel  # Nav2'nin doğrudan yayınladığı topic'i dinle (cmd_vel_nav yerine)
         timeout : 1.0     # Güvenilir timeout için artırıldı
         priority: 50     # Otonom komutların önceliği
         

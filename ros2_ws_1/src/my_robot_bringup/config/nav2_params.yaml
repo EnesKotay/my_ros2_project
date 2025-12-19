@@ -24,9 +24,9 @@ amcl:
     laser_max_range: 100.0
     laser_min_range: -1.0
     laser_model_type: "likelihood_field"
-    max_beams: 60
-    max_particles: 2000
-    min_particles: 500
+    max_beams: 80  # Artırıldı: daha iyi lidar kullanımı (60 -> 80)
+    max_particles: 3000  # Artırıldı: daha iyi lokalizasyon (2000 -> 3000)
+    min_particles: 1000  # Artırıldı: daha stabil lokalizasyon (500 -> 1000)
     odom_frame_id: "odom"
     odom_model_type: "diff"
     pf_err: 0.05
@@ -55,7 +55,7 @@ bt_navigator:
     odom_topic: /odom
     transform_tolerance: 2.0
     bt_loop_duration: 10
-    default_server_timeout: 20
+    default_server_timeout: 30  # Artırıldı: alternatif yol bulmak için daha fazla zaman (20 -> 30)
     wait_for_service_timeout: 1000
     action_server_result_timeout: 900.0
     navigators: ["navigate_to_pose", "navigate_through_poses"]
@@ -115,86 +115,89 @@ bt_navigator:
 controller_server:
   ros__parameters:
     use_sim_time: True
-    controller_frequency: 20.0
+    controller_frequency: 30.0  # Artırıldı: daha yumuşak ve hassas kontrol (20.0 -> 30.0)
     transform_tolerance: 2.0
     min_x_velocity_threshold: 0.001
     min_y_velocity_threshold: 0.5
     min_theta_velocity_threshold: 0.001
-    failure_tolerance: 0.3
+    failure_tolerance: 0.5  # Artırıldı: path bulunamadığında daha fazla deneme, alternatif yol bulmak için (0.3 -> 0.5)
     progress_checker_plugin: "progress_checker"
     goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
     
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
-      movement_time_allowance: 10.0
+      required_movement_radius: 0.1  # Daha da küçültüldü: dar alanlarda daha iyi ilerleme kontrolü (0.2 -> 0.1)
+      movement_time_allowance: 20.0  # Daha da artırıldı: dar alanlarda daha fazla zaman ver (15.0 -> 20.0)
     
     general_goal_checker:
       stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.25
-      yaw_goal_tolerance: 0.25
+      xy_goal_tolerance: 0.1  # Optimize edildi: dar alanlarda hassas ama ulaşılabilir hedef (0.12 -> 0.1)
+      yaw_goal_tolerance: 0.2   # Artırıldı: dönüşü tamamlamadan durmayı önler (0.12 -> 0.2)
     
     FollowPath:
       plugin: "dwb_core::DWBLocalPlanner"
       debug_trajectory_details: True
       min_vel_x: 0.0
       min_vel_y: 0.0
-      max_vel_x: 0.26
+      max_vel_x: 0.4  # Artırıldı: koridorda daha hızlı hareket (0.2 -> 0.4)
       max_vel_y: 0.0
-      max_vel_theta: 1.0
+      max_vel_theta: 1.2  # Artırıldı: daha hızlı ve akıcı dönüş (0.8 -> 1.2)
       min_speed_xy: 0.0
-      max_speed_xy: 0.26
-      min_speed_theta: 0.0
-      acc_lim_x: 2.5
+      max_speed_xy: 0.4  # Artırıldı: koridorda daha hızlı hareket (0.2 -> 0.4)
+      min_speed_theta: 0.1  # Eklendi: dönüş sırasında durmayı önler (0.0 -> 0.1)
+      acc_lim_x: 3.0  # Artırıldı: koridorda daha hızlı ivme (2.0 -> 3.0)
       acc_lim_y: 0.0
-      acc_lim_theta: 3.2
-      decel_lim_x: -2.5
+      acc_lim_theta: 4.0  # Artırıldı: daha hızlı açısal ivme, dönüşte durmayı önler (2.5 -> 4.0)
+      decel_lim_x: -3.0  # Artırıldı: koridorda daha hızlı yavaşlama (-2.0 -> -3.0)
       decel_lim_y: 0.0
-      decel_lim_theta: -3.2
-      vx_samples: 20
+      decel_lim_theta: -4.0  # Artırıldı: daha hızlı açısal yavaşlama, dönüşte durmayı önler (-2.5 -> -4.0)
+      vx_samples: 30  # Artırıldı: daha fazla trajectory örneği (20 -> 30)
       vy_samples: 5
-      vtheta_samples: 20
-      sim_time: 1.7
-      linear_granularity: 0.05
-      angular_granularity: 0.025
+      vtheta_samples: 40  # Artırıldı: dönüş sırasında daha fazla trajectory seçeneği (30 -> 40)
+      sim_time: 2.2  # Artırıldı: dönüş sırasında daha uzun vadeli planlama (2.0 -> 2.2)
+      linear_granularity: 0.03  # Küçültüldü: daha hassas hareket (0.05 -> 0.03)
+      angular_granularity: 0.05  # Artırıldı: daha akıcı dönüş, daha az kontrol noktası (0.02 -> 0.05)
       transform_tolerance: 2.0
-      xy_goal_tolerance: 0.25
-      trans_stopped_velocity: 0.25
+      xy_goal_tolerance: 0.1  # Optimize edildi: dar alanlarda hassas ama ulaşılabilir hedef (0.12 -> 0.1)
+      trans_stopped_velocity: 0.1  # Optimize edildi: dar alanlarda hassas durma kontrolü (0.12 -> 0.1)
       short_circuit_trajectory_evaluation: True
       stateful: True
       critics: ["RotateToGoal", "Oscillation", "BaseObstacle", "GoalAlign", "PathAlign", "PathDist", "GoalDist"]
-      BaseObstacle.scale: 0.02
-      PathAlign.scale: 32.0
-      PathAlign.forward_point_distance: 0.1
-      GoalAlign.scale: 24.0
-      GoalAlign.forward_point_distance: 0.1
-      PathDist.scale: 32.0
-      GoalDist.scale: 24.0
-      RotateToGoal.scale: 32.0
-      RotateToGoal.slowing_factor: 5.0
+      BaseObstacle.scale: 0.4  # Artırıldı: duvarlardan daha fazla mesafe bırakmak için (0.2 -> 0.4)
+      Oscillation.scale: 8.0  # Azaltıldı: dönüş sırasında oscillation algılamasını azalt (10.0 -> 8.0)
+      Oscillation.angle_tolerance: 0.2  # Artırıldı: dönüş sırasında oscillation algılamasını azalt (0.1 -> 0.2)
+      Oscillation.translation_tolerance: 0.15  # Artırıldı: dönüş sırasında oscillation algılamasını azalt (0.1 -> 0.15)
+      PathAlign.scale: 35.0  # Azaltıldı: dönüş sırasında path'e çok sıkı yapışmayı önle (40.0 -> 35.0)
+      PathAlign.forward_point_distance: 0.25  # Artırıldı: dönüş sırasında daha ileriye bakmak (0.2 -> 0.25)
+      GoalAlign.scale: 28.0  # Artırıldı: hedefe daha iyi hizalanma (24.0 -> 28.0)
+      GoalAlign.forward_point_distance: 0.15  # Artırıldı: daha ileriye bakmak (0.1 -> 0.15)
+      PathDist.scale: 40.0  # Azaltıldı: dönüş sırasında path'e çok yakın gitmeyi önle (50.0 -> 40.0)
+      GoalDist.scale: 28.0  # Artırıldı: hedefe daha hızlı yaklaşma (24.0 -> 28.0)
+      RotateToGoal.scale: 50.0  # Artırıldı: hedefe dönüşü daha güçlendir (40.0 -> 50.0)
+      RotateToGoal.slowing_factor: 3.0  # Azaltıldı: hedefe yaklaşırken çok yavaşlamayı önler (6.0 -> 3.0)
       RotateToGoal.lookahead_time: -1.0
 
 local_costmap:
   local_costmap:
     ros__parameters:
-      update_frequency: 5.0
-      publish_frequency: 2.0
+      update_frequency: 10.0  # Artırıldı: daha hızlı costmap güncellemesi (5.0 -> 10.0)
+      publish_frequency: 5.0  # Artırıldı: daha sık yayın (2.0 -> 5.0)
       global_frame: odom
       robot_base_frame: base_footprint
       use_sim_time: True
       transform_tolerance: 2.0
       rolling_window: true
-      width: 3
-      height: 3
-      resolution: 0.05
-      robot_radius: 0.22
+      width: 4  # Artırıldı: daha geniş görüş alanı (3 -> 4)
+      height: 4  # Artırıldı: daha geniş görüş alanı (3 -> 4)
+      resolution: 0.05  # Azaltıldı: dar alanlarda takılmayı önlemek için (0.025 -> 0.05)
+      robot_radius: 0.2  # Gerçek robot için: base_width=0.6m, base_length=0.4m -> inscribed_radius ~0.2m
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+        cost_scaling_factor: 6.0  # Artırıldı: duvarlardan daha fazla mesafe bırakmak için (4.0 -> 6.0)
+        inflation_radius: 0.7  # Artırıldı: duvarlardan daha fazla mesafe bırakmak için (0.5 -> 0.7)
       voxel_layer:
         plugin: "nav2_costmap_2d::VoxelLayer"
         enabled: True
@@ -226,15 +229,15 @@ local_costmap:
 global_costmap:
   global_costmap:
     ros__parameters:
-      update_frequency: 1.0
-      publish_frequency: 1.0
+      update_frequency: 2.0  # Artırıldı: daha hızlı global costmap güncellemesi (1.0 -> 2.0)
+      publish_frequency: 2.0  # Artırıldı: daha sık yayın (1.0 -> 2.0)
       global_frame: map
       robot_base_frame: base_footprint
       use_sim_time: True
       transform_tolerance: 2.0
-      robot_radius: 0.22
-      resolution: 0.05
-      track_unknown_space: true
+      robot_radius: 0.2  # Gerçek robot için: base_width=0.6m, base_length=0.4m -> inscribed_radius ~0.2m
+      resolution: 0.05  # Azaltıldı: dar alanlarda takılmayı önlemek için (0.025 -> 0.05)
+      track_unknown_space: true  # Bilinmeyen alanları takip et - alternatif yol bulmak için önemli
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
@@ -262,21 +265,22 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 3.0
-        inflation_radius: 0.55
+        cost_scaling_factor: 6.0  # Artırıldı: duvarlardan daha fazla mesafe bırakmak için (4.0 -> 6.0)
+        inflation_radius: 0.7  # Artırıldı: duvarlardan daha fazla mesafe bırakmak için (0.5 -> 0.7)
       always_send_full_costmap: True
 
 planner_server:
   ros__parameters:
-    expected_planner_frequency: 20.0
+    expected_planner_frequency: 5.0  # Azaltıldı: alternatif yol bulmak için daha fazla planlama zamanı (10.0 -> 5.0)
     use_sim_time: True
     planner_plugins: ["GridBased"]
     transform_tolerance: 2.0
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
-      tolerance: 0.5
-      use_astar: false
-      allow_unknown: true
+      tolerance: 4.0  # Artırıldı: köşelere gitmek için çok daha esnek tolerans (3.0 -> 4.0)
+      use_astar: true  # A* algoritması: dar alanlarda daha iyi path bulur
+      allow_unknown: true  # Bilinmeyen alanlardan geçmeye izin ver (alternatif yol için)
+      use_final_approach_orientation: false  # Hedefe yaklaşırken daha esnek orientasyon
 
 smoother_server:
   ros__parameters:
@@ -295,10 +299,10 @@ behavior_server:
     global_frame: map
     robot_base_frame: base_footprint
     transform_tolerance: 2.0
-    simulate_ahead_time: 2.0
-    max_rotational_vel: 1.0
-    min_rotational_vel: 0.4
-    rotational_acc_lim: 3.2
+    simulate_ahead_time: 1.5  # Azaltıldı: köşelerde daha kısa simülasyon (2.0 -> 1.5)
+    max_rotational_vel: 1.2  # Artırıldı: daha hızlı dönüş (0.8 -> 1.2)
+    min_rotational_vel: 0.3  # Artırıldı: dönüş sırasında durmayı önler (0.2 -> 0.3)
+    rotational_acc_lim: 4.0  # Artırıldı: daha hızlı açısal ivme (2.5 -> 4.0)
 
 waypoint_follower:
   ros__parameters:
@@ -314,13 +318,13 @@ waypoint_follower:
 velocity_smoother:
   ros__parameters:
     use_sim_time: True
-    smoothing_frequency: 20.0
+    smoothing_frequency: 30.0  # Controller frequency ile uyumlu (20.0 -> 30.0)
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [0.26, 0.0, 1.0]
-    min_velocity: [-0.26, 0.0, -1.0]
-    max_accel: [2.5, 0.0, 3.2]
-    max_decel: [-2.5, 0.0, -3.2]
+    max_velocity: [0.4, 0.0, 1.2]  # Controller ile uyumlu: koridorda daha hızlı (0.2 -> 0.4)
+    min_velocity: [-0.4, 0.0, -1.2]  # Controller ile uyumlu
+    max_accel: [3.0, 0.0, 4.0]  # Controller ile uyumlu: koridorda daha hızlı ivme (2.0 -> 3.0)
+    max_decel: [-3.0, 0.0, -4.0]  # Controller ile uyumlu: koridorda daha hızlı yavaşlama (-2.0 -> -3.0)
     odom_topic: "odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]

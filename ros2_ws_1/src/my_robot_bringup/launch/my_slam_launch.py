@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, TimerAction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -30,20 +30,25 @@ def generate_launch_description():
         launch_arguments={'use_sim_time': use_sim_time}.items()
     )
 
-    # 3. SLAM Toolbox Düğümünü Tanımla
-    slam_node = Node(
-        package='slam_toolbox',
-        executable='async_slam_toolbox_node', 
-        name='slam_toolbox',
-        output='log', # Ekran çıktısını temiz tutmak için 'log' kullanıldı
-        parameters=[
-            slam_config_path, 
-            {'use_sim_time': use_sim_time}
-        ],
+    # 3. SLAM Toolbox Düğümünü Tanımla (5 saniye sonra)
+    slam_node = TimerAction(
+        period=5.0,
+        actions=[
+            Node(
+                package='slam_toolbox',
+                executable='async_slam_toolbox_node', 
+                name='slam_toolbox',
+                output='log', # Ekran çıktısını temiz tutmak için 'log' kullanıldı
+                parameters=[
+                    slam_config_path, 
+                    {'use_sim_time': use_sim_time}
+                ],
+            )
+        ]
     )
     
     return LaunchDescription([
         declare_sim_time_arg,
-        gazebo_and_robot_launch,
-        slam_node,
+        gazebo_and_robot_launch,  # 0 saniye - anında başlar
+        slam_node,  # 5 saniye sonra
     ])

@@ -1,5 +1,5 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, TimerAction
 from launch_ros.actions import Node
 from launch.launch_description_sources import PythonLaunchDescriptionSource, FrontendLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
@@ -41,7 +41,7 @@ def generate_launch_description():
     
     # --- 3. Başlatma Aksiyonları ---
     
-    # 3.1. Gazebo ve Robot'u Başlat
+    # 3.1. Gazebo ve Robot'u Başlat (0 saniye - anında)
     # NOT: FrontendLaunchDescriptionSource (XML) yerine PythonLaunchDescriptionSource kullanılması profesyonel standarttır.
     gazebo_and_robot = IncludeLaunchDescription(
         FrontendLaunchDescriptionSource(gazebo_launch_path),
@@ -49,69 +49,119 @@ def generate_launch_description():
         launch_arguments={'use_sim_time': use_sim_time}.items() 
     )
     
-    # 3.2. Twist Mux (Simülasyon zamanı argüman ile besleniyor)
-    twist_mux = Node(
-        package="twist_mux",
-        executable="twist_mux",
-        parameters=[twist_mux_config_path, {'use_sim_time': use_sim_time}], # Düzeltme
-        remappings=[('/cmd_vel_out', '/diff_cont/cmd_vel_unstamped')],
-        output='log' # Konsol çıktısını temiz tutar
+    # 3.2. Spawn Entity - Robot'u Gazebo'ya spawn et (3 saniye sonra)
+    spawn_entity = TimerAction(
+        period=3.0,
+        actions=[
+            Node(
+                package='gazebo_ros',
+                executable='spawn_entity.py',
+                arguments=[
+                    '-topic', 'robot_description',
+                    '-entity', 'my_robot',
+                    '-x', '0.0',
+                    '-y', '0.0',
+                    '-z', '0.0',
+                    '-timeout', '30'
+                ],
+                output='screen'
+            )
+        ]
     )
     
-    # 3.3. Controller Spawner'lar (Simülasyon zamanı argüman ile besleniyor)
-    diff_drive_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["diff_cont", "--controller-manager", "/controller_manager"],
-        parameters=[{'use_sim_time': use_sim_time}]
+    # 3.3. Controller Spawner'lar (5 saniye sonra)
+    diff_drive_spawner = TimerAction(
+        period=5.0,
+        actions=[
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                arguments=["diff_cont", "--controller-manager", "/controller_manager"],
+                parameters=[{'use_sim_time': use_sim_time}]
+            )
+        ]
     )
     
-    joint_broad_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        arguments=["joint_broad", "--controller-manager", "/controller_manager"],
-        parameters=[{'use_sim_time': use_sim_time}]
+    joint_broad_spawner = TimerAction(
+        period=5.0,
+        actions=[
+            Node(
+                package="controller_manager",
+                executable="spawner",
+                arguments=["joint_broad", "--controller-manager", "/controller_manager"],
+                parameters=[{'use_sim_time': use_sim_time}]
+            )
+        ]
     )
     
-    # 3.4. SLAM Toolbox (Modüler Include)
-    slam_toolbox_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                FindPackageShare('slam_toolbox'),
-                'launch',
-                'online_async_launch.py'
-            ])
-        ]),
-        launch_arguments={
-            'slam_params_file': slam_config_path,
-            'use_sim_time': use_sim_time,
-        }.items()
+    # 3.4. Twist Mux (6 saniye sonra)
+    twist_mux = TimerAction(
+        period=6.0,
+        actions=[
+            Node(
+                package="twist_mux",
+                executable="twist_mux",
+                parameters=[twist_mux_config_path, {'use_sim_time': use_sim_time}],
+                remappings=[('/cmd_vel_out', '/diff_cont/cmd_vel_unstamped')],
+                output='log'
+            )
+        ]
     )
     
-    # 3.5. Nav2 Navigation Stack (Modüler Include)
-    nav2_navigation = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([
-            PathJoinSubstitution([
-                FindPackageShare('nav2_bringup'),
-                'launch',
-                'navigation_launch.py'
-            ])
-        ]),
-        launch_arguments={
-            'use_sim_time': use_sim_time,
-            'autostart': autostart,
-            'params_file': nav2_config_path
-        }.items()
+    # 3.5. SLAM Toolbox (8 saniye sonra)
+    slam_toolbox_launch = TimerAction(
+        period=8.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([
+                    PathJoinSubstitution([
+                        FindPackageShare('slam_toolbox'),
+                        'launch',
+                        'online_async_launch.py'
+                    ])
+                ]),
+                launch_arguments={
+                    'slam_params_file': slam_config_path,
+                    'use_sim_time': use_sim_time,
+                }.items()
+            )
+        ]
     )
     
-    # 3.6. RViz2 (Taşınabilir Rviz konfigürasyonu kullanılıyor)
-    rviz_node = Node(
-        package='rviz2',
-        executable='rviz2',
-        name='rviz2',
-        arguments=['-d', rviz_config_file], # Kendi rviz dosyanız yüklendi
-        parameters=[{'use_sim_time': use_sim_time}],
-        output='screen'
+    # 3.6. Nav2 Navigation Stack (9 saniye sonra)
+    nav2_navigation = TimerAction(
+        period=9.0,
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource([
+                    PathJoinSubstitution([
+                        FindPackageShare('nav2_bringup'),
+                        'launch',
+                        'navigation_launch.py'
+                    ])
+                ]),
+                launch_arguments={
+                    'use_sim_time': use_sim_time,
+                    'autostart': autostart,
+                    'params_file': nav2_config_path
+                }.items()
+            )
+        ]
+    )
+    
+    # 3.7. RViz2 (13 saniye sonra)
+    rviz_node = TimerAction(
+        period=13.0,
+        actions=[
+            Node(
+                package='rviz2',
+                executable='rviz2',
+                name='rviz2',
+                arguments=['-d', rviz_config_file],
+                parameters=[{'use_sim_time': use_sim_time}],
+                output='screen'
+            )
+        ]
     )
     
     # --- 4. Launch Tanımını Döndür ---
@@ -119,14 +169,12 @@ def generate_launch_description():
         declare_sim_time_arg,
         declare_autostart_arg,
         
-        gazebo_and_robot,
-        
-        # Controller Spawner'lar (Gazebo'nun başlama sırasına dikkat edilmeli)
-        diff_drive_spawner,
-        joint_broad_spawner,
-        
-        twist_mux,
-        slam_toolbox_launch,
-        nav2_navigation,
-        rviz_node,
+        gazebo_and_robot,  # 0 saniye - anında başlar
+        spawn_entity,  # 3 saniye sonra
+        diff_drive_spawner,  # 5 saniye sonra
+        joint_broad_spawner,  # 5 saniye sonra
+        twist_mux,  # 6 saniye sonra
+        slam_toolbox_launch,  # 8 saniye sonra
+        nav2_navigation,  # 9 saniye sonra
+        rviz_node,  # 13 saniye sonra
     ])

@@ -1,0 +1,34 @@
+explore:
+  ros__parameters:
+    # --- TEMEL AYARLAR ---
+    # SLAM'ın map topic'ini kullan (costmap yerine) - daha hızlı başlar
+    costmap_topic: /map  # SLAM'dan gelen ham harita - costmap yerine map kullan
+    costmap_updates_topic: /global_costmap/costmap_updates
+    nav_to_topic: /navigate_to_pose
+    robot_base_frame: base_footprint
+    map_topic: /map
+    visualize: true
+
+    # --- KEŞİF STRATEJİSİ (EN KRİTİK KISIM) ---
+    
+    # 1. Hedef Belirleme Sıklığı - BLACKLIST'E EKLENMEYİ ÖNLEMEK İÇİN
+    planner_frequency: 0.1  # Çok azaltıldı: çok az hedef değişikliği, blacklist'e eklenmeyi önler (0.2 -> 0.1)
+    
+    # 2. Takılma ve İlerleme Kontrolü - BLACKLIST'E EKLENMEYİ ÖNLEMEK İÇİN
+    progress_timeout: 120.0  # Çok artırıldı: hedefleri blacklist'e eklemeden önce ÇOK sabırlı ol (60.0 -> 120.0)
+    
+    # 3. Frontier Seçim Mantığı (Information Gain) - TÜM BOŞ ALANLARI KEŞFET
+    # Yakınlık mı (potential) yoksa yeni bilgi mi (gain)?
+    potential_scale: 0.1    # Çok azaltıldı: yakın/uzak ayrımı YAPMASIN, TÜM boş alanları keşfetsin (0.5 -> 0.1)
+    gain_scale: 30.0        # Artırıldı: BÜYÜK BOŞLUKLARI ÇOK tercih et, hiçbir boş alan kalmasın (25.0 -> 30.0)
+    
+    # 4. Sınır Hassasiyeti - KÜÇÜK BOŞLUKLARI DA KEŞFET
+    min_frontier_size: 0.2  # Küçültüldü: küçük boşlukları da keşfetsin, hiçbir yer kalmasın (0.3 -> 0.2)
+    
+    # 5. Keşif Mesafesi - TÜM ALANI KAPSA
+    # Eğer robot uzaklara gitmiyorsa bu değeri artırabilirsin
+    explore_radius: 20.0    # Artırıldı: TÜM boş alanları görmek için çok geniş arama (15.0 -> 20.0)
+
+    # --- EK ÖZELLİKLER ---
+    return_to_init: false   # Kapatıldı: keşif bitince başlangıca dönmesin, tüm alanı keşfetsin
+
