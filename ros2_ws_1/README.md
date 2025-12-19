@@ -292,14 +292,3 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosy
 - [ROS2 Humble Documentation](https://docs.ros.org/en/humble/)
 - [Frontier-Based Exploration](https://github.com/M0RF3US/m-explore-ros2)
 
-## 🎯 Gelecek Özellikler
-
-- [ ] Multi-robot exploration
-- [ ] Dynamic obstacle avoidance improvements
-- [ ] Map saving/loading automation
-- [ ] Performance optimizations
-- [ ] Real robot deployment support
-
----
-
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
